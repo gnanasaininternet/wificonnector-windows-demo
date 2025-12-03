@@ -35,12 +35,21 @@ function execDetailed(cmd) {
   });
 }
 
-// NEW FUNCTION: Check if SSID is visible
+// Check if SSID is visible
 async function isNetworkInRange(ssid) {
   const res = await execDetailed('netsh wlan show networks');
   if (!res.success) return false;
-  // Check if our SSID exists in the output
   return res.stdout.includes(ssid);
+}
+
+// Helper to escape XML characters
+function escapeXml(str) {
+  if (!str) return "";
+  return str.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
 }
 
 async function createUserAndConnect(payload, backendUrl) {
@@ -63,27 +72,32 @@ async function createUserAndConnect(payload, backendUrl) {
 
     logs.push(ts(`Backend success. Username: ${username}`));
 
-    // 2. CHECK IF IN ZONE (The Step You Asked For)
+    // 2. CHECK IF IN ZONE
     logs.push(ts(`Scanning for WiFi network '${ssid}'...`));
     
     const inRange = await isNetworkInRange(ssid);
 
     if (!inRange) {
-        // STOP HERE if not found
         logs.push(ts("❌ OUT OF ZONE: The network '" + ssid + "' is NOT visible."));
         logs.push(ts("Windows cannot install the Enterprise profile unless the WiFi is nearby."));
-        logs.push(ts("Please run this app inside the office range."));
+        logs.push(ts("Please run this app inside the radius range."));
         return { ok: false, logs }; 
     }
 
-    logs.push(ts("✅ Network found! Proceeding to install profile..."));
+    logs.push(ts("✅ Network found! Proceeding..."));
 
     // 3. Prepare XML
     const templatePath = findTemplate();
     let xml = fs.readFileSync(templatePath, "utf8");
-    xml = xml.replace(/{{USERNAME}}/g, username);
-    xml = xml.replace(/{{PASSWORD}}/g, password);
-    xml = xml.replace(/{{SSID}}/g, ssid);
+
+    // Bulletproof replacement
+    xml = xml.replace(/\{\{\s*USERNAME\s*\}\}/g, escapeXml(username));
+    xml = xml.replace(/\{\{\s*PASSWORD\s*\}\}/g, escapeXml(password));
+    xml = xml.replace(/\{\{\s*SSID\s*\}\}/g, ssid);
+    
+    xml = xml.replace(/\$\{\s*USERNAME\s*\}/g, escapeXml(username));
+    xml = xml.replace(/\$\{\s*PASSWORD\s*\}/g, escapeXml(password));
+    xml = xml.replace(/\$\{\s*SSID\s*\}/g, ssid);
 
     const userDataPath = app.getPath("userData");
     const outFile = path.join(userDataPath, "wifi_profile_generated.xml");
@@ -92,22 +106,23 @@ async function createUserAndConnect(payload, backendUrl) {
     // 4. Delete Old & Add New
     await execDetailed(`netsh wlan delete profile name="${ssid}"`);
     
-    logs.push(ts("Adding profile to Windows..."));
+    logs.push(ts("Adding profile..."));
     const addRes = await execDetailed(`netsh wlan add profile filename="${outFile}" user=current`);
 
     if (!addRes.success) {
-        logs.push(ts("CMD ERROR: " + addRes.stderr)); // Show exact Windows error
-        throw new Error("Failed to add profile. See error above.");
+        logs.push(ts("CMD ERROR: " + addRes.stderr)); 
+        throw new Error("Failed to add profile. Check logs above.");
     }
 
-    // 5. Connect
-    logs.push(ts("Connecting..."));
+    // 5. Connect (CLEAN LOGS AS REQUESTED)
+    logs.push(ts("Connecting...")); // <--- Only shows "Connecting..."
+    
     const connRes = await execDetailed(`netsh wlan connect name="${ssid}" ssid="${ssid}"`);
     
     if (!connRes.success) {
         logs.push(ts("Connect failed: " + connRes.stderr));
     } else {
-        logs.push(ts("✅ CONNECT COMMAND SENT SUCCESSFULLY!"));
+        logs.push(ts(`Successfully connected to ${ssid}`)); // <--- Specific success message
     }
 
     return { ok: true, logs };
