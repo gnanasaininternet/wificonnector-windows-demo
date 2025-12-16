@@ -14,6 +14,9 @@ function createWindow() {
   });
 
   win.loadFile("index.html");
+  
+  // Optional: Open DevTools in development
+  // win.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);
@@ -25,4 +28,8 @@ ipcMain.handle("create-and-connect", async (event, payload) => {
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });

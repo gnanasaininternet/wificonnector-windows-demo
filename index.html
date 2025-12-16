@@ -2,21 +2,53 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>WiFi Connector (Windows)</title>
+  <title>WiFi Connector - Windows Demo</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-  <h1>WiFi Connector — Windows Demo</h1>
+  <div class="container">
+    <h1>🌐 WiFi Connector</h1>
+    <p class="subtitle">WPA2-Enterprise Auto-Connect (RadiusTest5G)</p>
 
-  <input id="first_name" placeholder="First name" />
-  <input id="last_name" placeholder="Last name" />
-  <input id="mobile" placeholder="Mobile number" />
+    <div class="form-group">
+      <label for="first_name">First Name *</label>
+      <input id="first_name" type="text" placeholder="Enter first name" required />
+    </div>
 
-  <button id="submitBtn">Create user & Connect</button>
+    <div class="form-group">
+      <label for="last_name">Last Name *</label>
+      <input id="last_name" type="text" placeholder="Enter last name" required />
+    </div>
 
-  <h2>Logs</h2>
-  <textarea id="logs" readonly></textarea>
+    <div class="form-group">
+      <label for="mobile">Mobile Number *</label>
+      <input id="mobile" type="tel" placeholder="Enter 10-digit mobile number" maxlength="10" required />
+    </div>
+
+    <button id="submitBtn">🚀 Create User & Connect WiFi</button>
+
+    <div class="info-box">
+      <h3>ℹ️ How It Works:</h3>
+      <ol>
+        <li>Creates user account in OpenWISP RADIUS</li>
+        <li>Installs WiFi profile automatically</li>
+        <li>Stores credentials securely in Windows</li>
+        <li>Enables permanent zero-touch auto-connect</li>
+      </ol>
+    </div>
+
+    <div class="logs-section">
+      <h2>📋 Connection Logs</h2>
+      <textarea id="logs" readonly></textarea>
+    </div>
+
+    <div class="footer">
+      <p>⚠️ <strong>Run as Administrator</strong> required for profile installation</p>
+      <p>Network: <strong>RadiusTest5G</strong> (WPA2-Enterprise PEAP/MSCHAPv2)</p>
+      <p>Powered by <strong>Ninternet</strong></p>
+    </div>
+  </div>
 
   <script src="renderer.js"></script>
 </body>
